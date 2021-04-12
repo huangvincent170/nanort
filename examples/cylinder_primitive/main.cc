@@ -1,9 +1,9 @@
-#include "nanort.h"
+#include "../../nanort.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "../common/stb_image_write.h"
-
 #include <stdint.h>
+
+#include "../common/stb_image_write.h"
 
 namespace {
 

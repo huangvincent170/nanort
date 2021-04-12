@@ -48,6 +48,9 @@ THE SOFTWARE.
 #include <string>
 #include <vector>
 
+#include "Vintersector.h"
+#include "verilated.h"
+
 // compiler macros
 //
 // NANORT_USE_CPP11_FEATURE : Enable C++11 feature
@@ -634,7 +637,8 @@ class BBox {
 /// @brief Hit class for traversing nodes.
 ///
 /// Stores hit information of node traversal.
-/// Node traversal is used for two-level ray tracing(efficient ray traversal of a scene hierarchy)
+/// Node traversal is used for two-level ray tracing(efficient ray traversal of
+/// a scene hierarchy)
 ///
 template <typename T>
 class NodeHit {
@@ -682,8 +686,9 @@ class NodeHitComparator {
 /// @brief Bounding Volume Hierarchy acceleration.
 ///
 /// BVHAccel is central part of ray tracing(ray traversal).
-/// BVHAccel takes an input geometry(primitive) information and build a data structure
-/// for efficient ray tracing(`O(log2 N)` in theory, where N is the number of primitive in the scene).
+/// BVHAccel takes an input geometry(primitive) information and build a data
+/// structure for efficient ray tracing(`O(log2 N)` in theory, where N is the
+/// number of primitive in the scene).
 ///
 /// @tparam T real value type(float or double).
 ///
@@ -697,7 +702,8 @@ class BVHAccel {
   /// Build BVH for input primitives.
   ///
   /// @tparam Prim Primitive(e.g. Triangle) accessor class.
-  /// @tparam Pred Predicator(comparator class object for `Prim` class to find nearest hit point)
+  /// @tparam Pred Predicator(comparator class object for `Prim` class to find
+  /// nearest hit point)
   ///
   /// @param[in] num_primitives The number of primitive.
   /// @param[in] p Primitive accessor class object.
@@ -733,15 +739,17 @@ class BVHAccel {
   void Debug();
 
   ///
-  /// @brief Traverse into BVH along ray and find closest hit point & primitive if
-  /// found
+  /// @brief Traverse into BVH along ray and find closest hit point & primitive
+  /// if found
   ///
   /// @tparam I Intersector class
   /// @tparam H Hit class
   ///
   /// @param[in] ray Input ray
-  /// @param[in] intersector Intersector object. This object is called for each possible intersection of ray and BVH during traversal.
-  /// @param[out] isect Intersection point information(filled when closest hit point was found)
+  /// @param[in] intersector Intersector object. This object is called for each
+  /// possible intersection of ray and BVH during traversal.
+  /// @param[out] isect Intersection point information(filled when closest hit
+  /// point was found)
   /// @param[in] options Traversal options.
   ///
   /// @return true if the closest hit point found.
@@ -955,17 +963,11 @@ class TriangleMesh {
   //
   // Accessors
   //
-  const T *GetVertices() const {
-    return vertices_;
-  }
+  const T *GetVertices() const { return vertices_; }
 
-  const unsigned int *GetFaces() const {
-    return faces_;
-  }
+  const unsigned int *GetFaces() const { return faces_; }
 
-  size_t GetVertexStrideBytes() const {
-    return vertex_stride_bytes_;
-  }
+  size_t GetVertexStrideBytes() const { return vertex_stride_bytes_; }
 };
 
 ///
@@ -983,8 +985,8 @@ class TriangleIntersection {
 };
 
 ///
-/// Intersector is a template class which implements intersection method and stores
-/// intesection point information(`H`)
+/// Intersector is a template class which implements intersection method and
+/// stores intesection point information(`H`)
 ///
 /// @tparam T Precision(float or double)
 /// @tparam H Intersection point information struct
@@ -992,16 +994,15 @@ class TriangleIntersection {
 template <typename T = float, class H = TriangleIntersection<T> >
 class TriangleIntersector {
  public:
-
   // Initialize from mesh object.
   // M: mesh class
-  template<class M>
+  template <class M>
   TriangleIntersector(const M &m)
       : vertices_(m.GetVertices()),
         faces_(m.GetFaces()),
         vertex_stride_bytes_(m.GetVertexStrideBytes()) {}
 
-  template<class M>
+  template <class M>
   TriangleIntersector(const M *m)
       : vertices_(m->GetVertices()),
         faces_(m->GetFaces()),
@@ -1527,7 +1528,10 @@ inline void ComputeBoundingBoxThreaded(real3<T> *bmin, real3<T> *bmax,
   for (size_t t = 0; t < num_threads; t++) {
     workers.emplace_back(std::thread([&, t]() {
       size_t si = left_index + t * ndiv;
-      size_t ei = (t == (num_threads - 1)) ? size_t(right_index) : std::min(left_index + (t + 1) * ndiv, size_t(right_index));
+      size_t ei =
+          (t == (num_threads - 1))
+              ? size_t(right_index)
+              : std::min(left_index + (t + 1) * ndiv, size_t(right_index));
 
       local_bmins[3 * t + 0] = std::numeric_limits<T>::infinity();
       local_bmins[3 * t + 1] = std::numeric_limits<T>::infinity();
@@ -1769,7 +1773,8 @@ unsigned int BVHAccel<T>::BuildShallowTree(std::vector<BVHNode<T> > *out_nodes,
     right_child_index = BuildShallowTree(out_nodes, mid_idx, right_idx,
                                          depth + 1, max_shallow_depth, p, pred);
 
-    //std::cout << "shallow[" << offset << "] l and r = " << left_child_index << ", " << right_child_index << std::endl;
+    // std::cout << "shallow[" << offset << "] l and r = " << left_child_index
+    // << ", " << right_child_index << std::endl;
     (*out_nodes)[offset].data[0] = left_child_index;
     (*out_nodes)[offset].data[1] = right_child_index;
 
@@ -1965,7 +1970,8 @@ bool BVHAccel<T>::Build(unsigned int num_primitives, const Prim &p,
     for (size_t t = 0; t < num_threads; t++) {
       workers.emplace_back(std::thread([&, t]() {
         size_t si = t * ndiv;
-        size_t ei = (t == (num_threads - 1)) ? n : std::min((t + 1) * ndiv, size_t(n));
+        size_t ei =
+            (t == (num_threads - 1)) ? n : std::min((t + 1) * ndiv, size_t(n));
 
         for (size_t k = si; k < ei; k++) {
           indices_[k] = static_cast<unsigned int>(k);
@@ -2322,6 +2328,43 @@ inline bool IntersectRayAABB<float>(float *tminOut,  // [out]
                                     real3<float> ray_org,
                                     real3<float> ray_inv_dir,
                                     int ray_dir_sign[3]) {
+  ///
+  ///
+
+  VerilatedContext *contextp = new VerilatedContext;
+  // contextp->commandArgs(argc, argv);
+  Vintersector *vinter_obj = new Vintersector{contextp};
+  // intersector->clk = 0;
+  vinter_obj->reset = 0;
+  vinter_obj->min_t = min_t;
+  vinter_obj->max_t = max_t;
+  vinter_obj->bmin0 = bmin[0];
+  vinter_obj->bmin1 = bmin[1];
+  vinter_obj->bmin2 = bmin[2];
+  vinter_obj->bmax0 = bmax[0];
+  vinter_obj->bmax1 = bmax[1];
+  vinter_obj->bmax2 = bmax[2];
+  vinter_obj->ray_org0 = ray_org[0];
+  vinter_obj->ray_org1 = ray_org[1];
+  vinter_obj->ray_org2 = ray_org[2];
+  vinter_obj->ray_inv_dir0 = ray_inv_dir[0];
+  vinter_obj->ray_inv_dir1 = ray_inv_dir[1];
+  vinter_obj->ray_inv_dir2 = ray_inv_dir[2];
+  vinter_obj->ray_dir_sign0 = ray_dir_sign[0];
+  vinter_obj->ray_dir_sign1 = ray_dir_sign[1];
+  vinter_obj->ray_dir_sign2 = ray_dir_sign[2];
+
+  // vinter_obj->in_dummy = 0x11111111;
+  while (!contextp->gotFinish()) {
+    vinter_obj->eval();
+  }
+  int out = vinter_obj->out_dummy;
+  printf("output of intersector: %x\n", out);
+  delete vinter_obj;
+  delete contextp;
+  ///
+  ///
+
   float tmin, tmax;
 
   const float min_x = ray_dir_sign[0] ? bmax[0] : bmin[0];
@@ -2561,6 +2604,20 @@ bool BVHAccel<T>::Traverse(const Ray<T> &ray, const I &intersector, H *isect,
     const BVHNode<T> &node = nodes_[index];
 
     node_stack_index--;
+
+    VerilatedContext *contextp = new VerilatedContext;
+    // contextp->commandArgs(argc, argv);
+    Vintersector *vinter_obj = new Vintersector{contextp};
+    // intersector->clk = 0;
+    vinter_obj->reset = 0;
+    vinter_obj->in_dummy = 0x11111111;
+    while (!contextp->gotFinish()) {
+      vinter_obj->eval();
+    }
+    int out = vinter_obj->out_dummy;
+    printf("output of intersector: %x\n", out);
+    delete vinter_obj;
+    delete contextp;
 
     bool hit = IntersectRayAABB(&min_t, &max_t, ray.min_t, hit_t, node.bmin,
                                 node.bmax, ray_org, ray_inv_dir, dir_sign);

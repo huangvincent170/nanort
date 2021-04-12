@@ -1,0 +1,13 @@
+# DESCRIPTION: Verilator output: Timestamp data for --skip-identical.  Delete at will.
+C "-Wall --cc ../../intersector.v --exe --build main.cc -O2 -o cylinder_render -I~/cs3220/nanort/ -I~/cs3220/nanort/examples/cylinder_primitive/ main.cc"
+S       219 53761720551825185  1618190591    17396100  1618190591    17396100 "../../intersector.v"
+S   9190960 32651097298542243  1618186694   897337600  1618186694   897337600 "/usr/local/bin/verilator_bin"
+T      4080 1970324837064570  1618190593   724056100  1618190593   724056100 "obj_dir/Vintersector.cpp"
+T      3047 1688849860353910  1618190593   723056000  1618190593   723056000 "obj_dir/Vintersector.h"
+T      1810 9288674231541700  1618190593   724056100  1618190593   724056100 "obj_dir/Vintersector.mk"
+T      2345 1407374883643256  1618190593   723056000  1618190593   723056000 "obj_dir/Vintersector__Slow.cpp"
+T       674 77405618595520370  1618190593   722056600  1618190593   722056600 "obj_dir/Vintersector__Syms.cpp"
+T       873 374924668978683763  1618190593   722056600  1618190593   722056600 "obj_dir/Vintersector__Syms.h"
+T       305 72902018968153718  1618190593   725058200  1618190593   725058200 "obj_dir/Vintersector__ver.d"
+T         0        0  1618190593   725058200  1618190593   725058200 "obj_dir/Vintersector__verFiles.dat"
+T      1612 13229323905490811  1618190593   724056100  1618190593   724056100 "obj_dir/Vintersector_classes.mk"
