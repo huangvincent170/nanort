@@ -467,6 +467,8 @@ int main(int argc, char **argv) {
 
   std::vector<float> rgb(width * height * 3, 0.0f);
 
+  std::chrono::duration<double> elapsed_seconds(0);
+
   // Shoot rays.
   for (int y = 0; y < height; y++) {
     for (int x = 0; x < width; x++) {
@@ -493,7 +495,7 @@ int main(int argc, char **argv) {
       CylinderIntersector<CylinderIntersection> isector(&vertices.at(0),
                                                         &radiuss.at(0));
       CylinderIntersection isect;
-      bool hit = accel.Traverse(ray, isector, &isect);
+      bool hit = accel.Traverse(ray, isector, &isect, &elapsed_seconds);
       if (hit) {
         // Flip Y
         rgb[3 * ((height - y - 1) * width + x) + 0] = fabsf(isect.normal[0]);
@@ -502,6 +504,7 @@ int main(int argc, char **argv) {
       }
     }
   }
+  std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
 
   SaveImagePNG("render.png", &rgb.at(0), width, height);
 

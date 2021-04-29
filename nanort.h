@@ -37,11 +37,13 @@ THE SOFTWARE.
 
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <functional>
+#include <iostream>
 #include <limits>
 #include <memory>
 #include <queue>
@@ -756,6 +758,7 @@ class BVHAccel {
   ///
   template <class I, class H>
   bool Traverse(const Ray<T> &ray, const I &intersector, H *isect,
+                std::chrono::duration<double> *timer,
                 const BVHTraceOptions &options = BVHTraceOptions()) const;
 
 #if 0
@@ -2315,7 +2318,7 @@ bool BVHAccel<T>::Load(FILE *fp) {
 #endif
 
 typedef int32_t fixed_point_t;
-#define FIXED_POINT_FRACTIONAL_BITS 10
+#define FIXED_POINT_FRACTIONAL_BITS 8
 
 inline float fixed_to_float(fixed_point_t input) {
   return ((float)input / (float)(1 << FIXED_POINT_FRACTIONAL_BITS));
@@ -2327,6 +2330,9 @@ inline fixed_point_t float_to_fixed(float input, bool supress_warning = false) {
       // printf("warning large number detected, setting to max value\n");
     }
     return (fixed_point_t)2147483647;
+  }
+  if (input < -2147483648) {
+    return (fixed_point_t)-2147483648;
   }
   return (fixed_point_t)(round(input * (1 << FIXED_POINT_FRACTIONAL_BITS)));
 }
@@ -2345,41 +2351,41 @@ inline bool IntersectRayAABB<float>(float *tminOut,  // [out]
                                     real3<float> ray_org,
                                     real3<float> ray_inv_dir,
                                     int ray_dir_sign[3]) {
-  printf("min_t original float: %f, to_fixed: %d, re-float: %f\n", min_t,
-         float_to_fixed(min_t), fixed_to_float(float_to_fixed(min_t)));
-  printf("max_t original float: %f, to_fixed: %d, re-float: %f\n", max_t,
-         float_to_fixed(max_t), fixed_to_float(float_to_fixed(max_t)));
-  printf("bmin0 original float: %f, to_fixed: %d, re-float: %f\n", bmin[0],
-         float_to_fixed(bmin[0]), fixed_to_float(float_to_fixed(bmin[0])));
-  printf("bmin1 original float: %f, to_fixed: %d, re-float: %f\n", bmin[1],
-         float_to_fixed(bmin[1]), fixed_to_float(float_to_fixed(bmin[1])));
-  printf("bmin2 original float: %f, to_fixed: %d, re-float: %f\n", bmin[2],
-         float_to_fixed(bmin[2]), fixed_to_float(float_to_fixed(bmin[2])));
-  printf("bmax0 original float: %f, to_fixed: %d, re-float: %f\n", bmax[0],
-         float_to_fixed(bmax[0]), fixed_to_float(float_to_fixed(bmax[0])));
-  printf("bmax1 original float: %f, to_fixed: %d, re-float: %f\n", bmax[1],
-         float_to_fixed(bmax[1]), fixed_to_float(float_to_fixed(bmax[1])));
-  printf("bmax2 original float: %f, to_fixed: %d, re-float: %f\n", bmax[2],
-         float_to_fixed(bmax[2]), fixed_to_float(float_to_fixed(bmax[2])));
-  printf("ray_org0 original float: %f, to_fixed: %d, re-float: %f\n",
-         ray_org[0], float_to_fixed(ray_org[0]),
-         fixed_to_float(float_to_fixed(ray_org[0])));
-  printf("ray_org1 original float: %f, to_fixed: %d, re-float: %f\n",
-         ray_org[1], float_to_fixed(ray_org[1]),
-         fixed_to_float(float_to_fixed(ray_org[1])));
-  printf("ray_org2 original float: %f, to_fixed: %d, re-float: %f\n",
-         ray_org[2], float_to_fixed(ray_org[2]),
-         fixed_to_float(float_to_fixed(ray_org[2])));
-  printf("ray_inv_dir0 original float: %f, to_fixed: %d, re-float: %f\n",
-         ray_inv_dir[0], float_to_fixed(ray_inv_dir[0]),
-         fixed_to_float(float_to_fixed(ray_inv_dir[0])));
-  printf("ray_inv_dir1 original float: %f, to_fixed: %d, re-float: %f\n",
-         ray_inv_dir[1], float_to_fixed(ray_inv_dir[1]),
-         fixed_to_float(float_to_fixed(ray_inv_dir[1])));
-  printf("ray_inv_dir2 original float: %f, to_fixed: %d, re-float: %f\n",
-         ray_inv_dir[2], float_to_fixed(ray_inv_dir[2]),
-         fixed_to_float(float_to_fixed(ray_inv_dir[2])));
-  fflush(stdout);
+  // printf("min_t original float: %f, to_fixed: %d, re-float: %f\n", min_t,
+  //        float_to_fixed(min_t), fixed_to_float(float_to_fixed(min_t)));
+  // printf("max_t original float: %f, to_fixed: %d, re-float: %f\n", max_t,
+  //        float_to_fixed(max_t), fixed_to_float(float_to_fixed(max_t)));
+  // printf("bmin0 original float: %f, to_fixed: %d, re-float: %f\n", bmin[0],
+  //        float_to_fixed(bmin[0]), fixed_to_float(float_to_fixed(bmin[0])));
+  // printf("bmin1 original float: %f, to_fixed: %d, re-float: %f\n", bmin[1],
+  //        float_to_fixed(bmin[1]), fixed_to_float(float_to_fixed(bmin[1])));
+  // printf("bmin2 original float: %f, to_fixed: %d, re-float: %f\n", bmin[2],
+  //        float_to_fixed(bmin[2]), fixed_to_float(float_to_fixed(bmin[2])));
+  // printf("bmax0 original float: %f, to_fixed: %d, re-float: %f\n", bmax[0],
+  //        float_to_fixed(bmax[0]), fixed_to_float(float_to_fixed(bmax[0])));
+  // printf("bmax1 original float: %f, to_fixed: %d, re-float: %f\n", bmax[1],
+  //        float_to_fixed(bmax[1]), fixed_to_float(float_to_fixed(bmax[1])));
+  // printf("bmax2 original float: %f, to_fixed: %d, re-float: %f\n", bmax[2],
+  //        float_to_fixed(bmax[2]), fixed_to_float(float_to_fixed(bmax[2])));
+  // printf("ray_org0 original float: %f, to_fixed: %d, re-float: %f\n",
+  //        ray_org[0], float_to_fixed(ray_org[0]),
+  //        fixed_to_float(float_to_fixed(ray_org[0])));
+  // printf("ray_org1 original float: %f, to_fixed: %d, re-float: %f\n",
+  //        ray_org[1], float_to_fixed(ray_org[1]),
+  //        fixed_to_float(float_to_fixed(ray_org[1])));
+  // printf("ray_org2 original float: %f, to_fixed: %d, re-float: %f\n",
+  //        ray_org[2], float_to_fixed(ray_org[2]),
+  //        fixed_to_float(float_to_fixed(ray_org[2])));
+  // printf("ray_inv_dir0 original float: %f, to_fixed: %d, re-float: %f\n",
+  //        ray_inv_dir[0], float_to_fixed(ray_inv_dir[0]),
+  //        fixed_to_float(float_to_fixed(ray_inv_dir[0])));
+  // printf("ray_inv_dir1 original float: %f, to_fixed: %d, re-float: %f\n",
+  //        ray_inv_dir[1], float_to_fixed(ray_inv_dir[1]),
+  //        fixed_to_float(float_to_fixed(ray_inv_dir[1])));
+  // printf("ray_inv_dir2 original float: %f, to_fixed: %d, re-float: %f\n",
+  //        ray_inv_dir[2], float_to_fixed(ray_inv_dir[2]),
+  //        fixed_to_float(float_to_fixed(ray_inv_dir[2])));
+  // fflush(stdout);
 
   VerilatedContext *contextp = new VerilatedContext;
   // contextp->commandArgs(argc, argv);
@@ -2400,6 +2406,9 @@ inline bool IntersectRayAABB<float>(float *tminOut,  // [out]
   vinter_obj->ray_inv_dir0 = float_to_fixed(ray_inv_dir[0]);
   vinter_obj->ray_inv_dir1 = float_to_fixed(ray_inv_dir[1]);
   vinter_obj->ray_inv_dir2 = float_to_fixed(ray_inv_dir[2]);
+  vinter_obj->ray_dir_sign0 = ray_dir_sign[0];
+  vinter_obj->ray_dir_sign1 = ray_dir_sign[1];
+  vinter_obj->ray_dir_sign2 = ray_dir_sign[2];
 
   fflush(stdout);
   while (!contextp->gotFinish()) {
@@ -2407,51 +2416,51 @@ inline bool IntersectRayAABB<float>(float *tminOut,  // [out]
   }
   float out_tmin = fixed_to_float(vinter_obj->tmin);
   float out_tmax = fixed_to_float(vinter_obj->tmax);
-  printf("out min %f max %f\n", out_tmin, out_tmax);
+  // printf("out min %f max %f\n", out_tmin, out_tmax);
   bool v_out = out_tmin <= out_tmax;
   delete vinter_obj;
   delete contextp;
 
-  float tmin, tmax;
+  // float tmin, tmax;
 
-  const float min_x = ray_dir_sign[0] ? bmax[0] : bmin[0];
-  const float min_y = ray_dir_sign[1] ? bmax[1] : bmin[1];
-  const float min_z = ray_dir_sign[2] ? bmax[2] : bmin[2];
-  const float max_x = ray_dir_sign[0] ? bmin[0] : bmax[0];
-  const float max_y = ray_dir_sign[1] ? bmin[1] : bmax[1];
-  const float max_z = ray_dir_sign[2] ? bmin[2] : bmax[2];
+  // const float min_x = ray_dir_sign[0] ? bmax[0] : bmin[0];
+  // const float min_y = ray_dir_sign[1] ? bmax[1] : bmin[1];
+  // const float min_z = ray_dir_sign[2] ? bmax[2] : bmin[2];
+  // const float max_x = ray_dir_sign[0] ? bmin[0] : bmax[0];
+  // const float max_y = ray_dir_sign[1] ? bmin[1] : bmax[1];
+  // const float max_z = ray_dir_sign[2] ? bmin[2] : bmax[2];
 
-  // X
-  const float tmin_x = (min_x - ray_org[0]) * ray_inv_dir[0];
-  // MaxMult robust BVH traversal(up to 4 ulp).
-  // 1.0000000000000004 for double precision.
-  const float tmax_x = (max_x - ray_org[0]) * ray_inv_dir[0] * 1.00000024f;
-  printf("og tminx %f\n", tmin_x);
-  printf("og tmaxx %f\n", tmin_x);
+  // // X
+  // const float tmin_x = (min_x - ray_org[0]) * ray_inv_dir[0];
+  // // MaxMult robust BVH traversal(up to 4 ulp).
+  // // 1.0000000000000004 for double precision.
+  // const float tmax_x = (max_x - ray_org[0]) * ray_inv_dir[0] * 1.00000024f;
+  // // printf("og tminx %f\n", tmin_x);
+  // // printf("og tmaxx %f\n", tmin_x);
 
-  // Y
-  const float tmin_y = (min_y - ray_org[1]) * ray_inv_dir[1];
-  const float tmax_y = (max_y - ray_org[1]) * ray_inv_dir[1] * 1.00000024f;
-  printf("og tminy %f\n", tmin_y);
-  printf("og tmaxy %f\n", tmin_y);
-  // Z
-  const float tmin_z = (min_z - ray_org[2]) * ray_inv_dir[2];
-  const float tmax_z = (max_z - ray_org[2]) * ray_inv_dir[2] * 1.00000024f;
-  printf("og tminz %f\n", tmin_z);
-  printf("og tmaxz %f\n", tmin_z);
-  tmin = safemax(tmin_z, safemax(tmin_y, safemax(tmin_x, min_t)));
-  tmax = safemin(tmax_z, safemin(tmax_y, safemin(tmax_x, max_t)));
+  // // Y
+  // const float tmin_y = (min_y - ray_org[1]) * ray_inv_dir[1];
+  // const float tmax_y = (max_y - ray_org[1]) * ray_inv_dir[1] * 1.00000024f;
+  // // printf("og tminy %f\n", tmin_y);
+  // // printf("og tmaxy %f\n", tmin_y);
+  // // Z
+  // const float tmin_z = (min_z - ray_org[2]) * ray_inv_dir[2];
+  // const float tmax_z = (max_z - ray_org[2]) * ray_inv_dir[2] * 1.00000024f;
+  // // printf("og tminz %f\n", tmin_z);
+  // // printf("og tmaxz %f\n", tmin_z);
+  // tmin = safemax(tmin_z, safemax(tmin_y, safemax(tmin_x, min_t)));
+  // tmax = safemin(tmax_z, safemin(tmax_y, safemin(tmax_x, max_t)));
 
-  printf("og tmin %f tmax %f\n", tmin, tmax);
-
-  if (tmin <= tmax) {
-    (*tminOut) = tmin;
-    (*tmaxOut) = tmax;
-    if (!v_out) printf("MISMATCHED OUTPUT, SHOULD BE TRUE\n");
-    return true;
-  }
-  if (v_out) printf("MISMATCHED OUTPUT, SHOULD BE FALSE\n");
-  return false;  // no hit
+  // printf("og tmin %f tmax %f\n", tmin, tmax);
+  return v_out;
+  // if (tmin <= tmax) {
+  //   (*tminOut) = tmin;
+  //   (*tmaxOut) = tmax;
+  //   // if (!v_out) printf("MISMATCHED OUTPUT, SHOULD BE TRUE\n");
+  //   return true;
+  // }
+  // // if (v_out) printf("MISMATCHED OUTPUT, SHOULD BE FALSE\n");
+  // return false;  // no hit
 }
 
 template <>
@@ -2617,6 +2626,7 @@ bool BVHAccel<T>::MultiHitTestLeafNode(
 template <typename T>
 template <class I, class H>
 bool BVHAccel<T>::Traverse(const Ray<T> &ray, const I &intersector, H *isect,
+                           std::chrono::duration<double> *timer,
                            const BVHTraceOptions &options) const {
   const int kMaxStackDepth = 512;
   (void)kMaxStackDepth;
@@ -2673,8 +2683,11 @@ bool BVHAccel<T>::Traverse(const Ray<T> &ray, const I &intersector, H *isect,
     // delete vinter_obj;
     // delete contextp;
 
+    auto start = std::chrono::steady_clock::now();
     bool hit = IntersectRayAABB(&min_t, &max_t, ray.min_t, hit_t, node.bmin,
                                 node.bmax, ray_org, ray_inv_dir, dir_sign);
+    auto end = std::chrono::steady_clock::now();
+    *timer += end - start;
 
     if (hit) {
       // Branch node
