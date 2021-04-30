@@ -40,7 +40,8 @@ void Simulator::step() {
     vinter_obj->ray_dir_sign2 = input.ray_dir_sign2;
 
     vinter_obj->eval();
-    
+    input_deque.pop_front();
+
     timestamp++;
     // std::cout << "timestamp: " << timestamp << "\n";
 
