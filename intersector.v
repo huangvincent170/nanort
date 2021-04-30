@@ -114,7 +114,7 @@ initial begin
 
 // $display("%d tmax ", tmax);
 // $display("%d tmin ", tmin);
-    $finish;
+    //$finish;
 end
 endmodule
 
